@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQUISH.IT // DATA COMPRESSION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Zen+Tokyo+Zoo&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #050505;
+            --main-color: #e0e0e0;
+            --dim-color: #4a4a4a;
+            --accent-color: #ffffff;
+            --crt-flicker: 0.02;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--main-color);
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+            margin: 0;
+            cursor: crosshair;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- CRT EFFECTS --- */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+            animation: scanlineScroll 0.5s linear infinite;
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+            z-index: 51;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        }
+
+        .flicker {
+            animation: flickerAnimation 0.15s infinite;
+        }
+
+        /* --- TYPOGRAPHY & GLITCH --- */
+        .cyber-font {
+            font-family: 'Zen Tokyo Zoo', cursive;
+        }
+
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 #fff;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 #999;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+
+        /* --- UI ELEMENTS --- */
+        .cyber-border {
+            border: 2px solid var(--main-color);
+            position: relative;
+            background: rgba(10, 10, 10, 0.8);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .cyber-border::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px;
+            width: 10px; height: 10px;
+            border-top: 2px solid var(--accent-color);
+            border-left: 2px solid var(--accent-color);
+        }
+        .cyber-border::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; right: -2px;
+            width: 10px; height: 10px;
+            border-bottom: 2px solid var(--accent-color);
+            border-right: 2px solid var(--accent-color);
+        }
+
+        .cyber-btn {
+            background: transparent;
+            border: 1px solid var(--main-color);
+            color: var(--main-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+
+        .cyber-btn:hover {
+            background: var(--main-color);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .cyber-input-zone {
+            background-image: 
+                linear-gradient(45deg, #111 25%, transparent 25%), 
+                linear-gradient(-45deg, #111 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #111 75%), 
+                linear-gradient(-45deg, transparent 75%, #111 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .social-link path {
+            fill: var(--main-color);
+            transition: fill 0.3s ease;
+        }
+        .social-link:hover path {
+            fill: var(--accent-color);
+            filter: drop-shadow(0 0 5px white);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes scanlineScroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 4px; }
+        }
+
+        @keyframes flickerAnimation {
+            0% { opacity: 0.95; }
+            5% { opacity: 0.8; }
+            10% { opacity: 0.9; }
+            15% { opacity: 0.6; }
+            20% { opacity: 0.95; }
+            50% { opacity: 0.9; }
+            100% { opacity: 0.95; }
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 31px, 0); transform: skew(0.6deg); }
+            5% { clip: rect(70px, 9999px, 71px, 0); transform: skew(0.2deg); }
+            10% { clip: rect(25px, 9999px, 96px, 0); transform: skew(0.04deg); }
+            15% { clip: rect(40px, 9999px, 16px, 0); transform: skew(0.8deg); }
+            20% { clip: rect(4px, 9999px, 88px, 0); transform: skew(0.2deg); }
+            100% { clip: rect(66px, 9999px, 5px, 0); transform: skew(0.4deg); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); transform: skew(0.3deg); }
+            5% { clip: rect(32px, 9999px, 5px, 0); transform: skew(0.3deg); }
+            10% { clip: rect(80px, 9999px, 45px, 0); transform: skew(0.8deg); }
+            100% { clip: rect(40px, 9999px, 20px, 0); transform: skew(0.1deg); }
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* --- LOADING SCREEN --- */
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-bar {
+            width: 300px;
+            height: 20px;
+            border: 2px solid white;
+            padding: 2px;
+            margin-top: 20px;
+        }
+        
+        .loader-progress {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #333; }
+        ::-webkit-scrollbar-thumb { background: #fff; border: 1px solid #000; }
+        ::-webkit-scrollbar-thumb:hover { background: #ccc; }
+
+        .hidden-el { display: none; }
+        .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+    </style>
+</head>
+<body class="flicker">
+
+    <!-- OVERLAYS -->
+    <div class="scanlines"></div>
+    <div class="crt-overlay"></div>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+        <div class="text-4xl cyber-font mb-4 tracking-widest text-white">SYSTEM BOOT</div>
+        <div class="font-mono text-gray-400 text-sm mb-2" id="loader-text">INITIALIZING...</div>
+        <div class="loader-bar">
+            <div class="loader-progress" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-30"></canvas>
+
+    <!-- MAIN CONTENT -->
+    <div id="app-container" class="flex-grow flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full relative z-10 opacity-0 transition-opacity duration-1000">
+        
+        <!-- HEADER -->
+        <header class="flex justify-between items-end border-b-2 border-white pb-4 mb-8">
+            <div>
+                <h1 class="text-6xl md:text-8xl font-bold leading-none tracking-tighter glitch" data-text="SQUISH.IT">SQUISH.IT</h1>
+                <p class="text-lg md:text-xl tracking-[0.5em] mt-2 uppercase">PNG // JPG CONVERTER</p>
+            </div>
+            <div class="text-right hidden md:block">
+                <div class="text-xs text-gray-400 mb-1">SYS.VER.2.0.77</div>
+                <div class="text-2xl cyber-font">圧縮する</div> <!-- "Compress" in Japanese -->
+            </div>
+        </header>
+
+        <!-- MAIN INTERFACE GRID -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-grow">
+            
+            <!-- LEFT: CONTROLS & INFO -->
+            <section class="lg:col-span-1 flex flex-col gap-6">
+                <!-- Status Box -->
+                <div class="cyber-border p-6">
+                    <h3 class="text-2xl mb-4 border-b border-gray-600 pb-2 flex justify-between">
+                        <span>STATUS</span>
+                        <span class="animate-pulse">● ONLINE</span>
+                    </h3>
+                    <div class="space-y-2 font-mono text-sm text-gray-300">
+                        <div class="flex justify-between"><span>CORE</span><span>ACTIVE</span></div>
+                        <div class="flex justify-between"><span>AUDIO</span><span id="audio-status">MUTED</span></div>
+                        <div class="flex justify-between"><span>MEMORY</span><span>OK</span></div>
+                        <div class="mt-4 p-2 bg-gray-900 border border-gray-700 text-xs">
+                            > WAITING FOR INPUT STREAM...<br>
+                            > READY TO SQUISH.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="cyber-border p-6">
+                    <h3 class="text-2xl mb-4 border-b border-gray-600 pb-2">PARAMETERS</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block mb-2 text-sm uppercase tracking-wider">Compression Fidelity</label>
+                            <input type="range" id="quality-slider" min="0.1" max="1.0" step="0.01" value="0.92" class="w-full accent-white bg-gray-800 h-2 rounded-none appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs mt-1 text-gray-500">
+                                <span>MAX CRUNCH</span>
+                                <span id="quality-val">92%</span>
+                                <span>LOSSLESS-ISH</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="bulk-download" class="w-4 h-4 bg-black border border-white rounded-none focus:ring-0 text-white">
+                            <label for="bulk-download" class="text-sm cursor-pointer select-none hover:text-white text-gray-300">AUTO-DOWNLOAD ON COMPLETE</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER & RIGHT: DROPZONE & RESULTS -->
+            <section class="lg:col-span-2 flex flex-col gap-6">
+                
+                <!-- Drop Zone -->
+                <div id="drop-zone" class="cyber-border cyber-input-zone h-64 flex flex-col justify-center items-center text-center p-8 transition-colors cursor-pointer group hover:bg-white/5">
+                    <div class="mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-2 group-hover:text-white text-gray-200">DROP DATA HERE</h2>
+                    <p class="text-gray-400 text-sm tracking-widest uppercase">Or Click to Upload (PNG Only)</p>
+                    <p class="text-xs text-gray-600 mt-4 font-mono">SUPPORT: SINGLE // BATCH</p>
+                    <input type="file" id="file-input" class="hidden" multiple accept="image/png">
+                </div>
+
+                <!-- Results Area -->
+                <div id="results-area" class="cyber-border flex-grow p-4 min-h-[200px] max-h-[400px] overflow-y-auto hidden">
+                    <div class="flex justify-between items-center mb-4 sticky top-0 bg-black/90 p-2 border-b border-gray-700 z-10">
+                        <h3 class="text-xl">OUTPUT LOG</h3>
+                        <button id="clear-btn" class="text-xs hover:text-red-500 hover:underline">[CLEAR LOG]</button>
+                    </div>
+                    <div id="file-list" class="space-y-3">
+                        <!-- Items injected via JS -->
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- FOOTER / SOCIALS -->
+        <footer class="mt-12 pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-xs text-gray-500 font-mono">
+                <span class="animate-pulse">_</span> PROJECT SQUISH.IT &copy; 2077
+            </div>
+            
+            <div class="flex gap-8 items-center">
+                <a href="https://instagram.com/maxfluxai" target="_blank" class="social-link group flex items-center gap-2 no-underline">
+                    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                    <span class="text-sm font-bold tracking-widest hidden md:block">MAXFLUXAI</span>
+                </a>
+
+                <a href="https://x.com/maxfluxai" target="_blank" class="social-link group flex items-center gap-2 no-underline">
+                    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span class="text-sm font-bold tracking-widest hidden md:block">MAXFLUXAI</span>
+                </a>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        /* --- AUDIO SYSTEM (SYNTHESIZED) --- */
+        // No external files. Pure Web Audio API.
+        const AudioSys = (() => {
+            let context = null;
+            let masterGain = null;
+            let isMuted = true; // Start muted for autoplay policies
+
+            const init = () => {
+                if (!context) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    context = new AudioContext();
+                    masterGain = context.createGain();
+                    masterGain.gain.value = 0.3; // Low volume default
+                    masterGain.connect(context.destination);
+                    isMuted = false;
+                    document.getElementById('audio-status').innerText = "ENABLED";
+                }
+                if (context.state === 'suspended') {
+                    context.resume();
+                }
+            };
+
+            const playTone = (freq, type, duration, delay = 0) => {
+                if (isMuted || !context) return;
+                const osc = context.createOscillator();
+                const gain = context.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, context.currentTime + delay);
+                
+                gain.gain.setValueAtTime(0.1, context.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + delay + duration);
+                
+                osc.connect(gain);
+                gain.connect(masterGain);
+                
+                osc.start(context.currentTime + delay);
+                osc.stop(context.currentTime + delay + duration);
+            };
+
+            const noise = (duration) => {
+                if (isMuted || !context) return;
+                const bufferSize = context.sampleRate * duration;
+                const buffer = context.createBuffer(1, bufferSize, context.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = context.createBufferSource();
+                noise.buffer = buffer;
+                const gain = context.createGain();
+                gain.gain.value = 0.05;
+                noise.connect(gain);
+                gain.connect(masterGain);
+                noise.start();
+            };
+
+            return {
+                init,
+                hover: () => playTone(800, 'square', 0.05),
+                click: () => playTone(1200, 'sine', 0.1),
+                success: () => {
+                    playTone(440, 'triangle', 0.1, 0);
+                    playTone(880, 'triangle', 0.2, 0.1);
+                },
+                boot: () => {
+                    playTone(100, 'sawtooth', 0.5, 0);
+                    setTimeout(() => noise(0.2), 300);
+                },
+                process: () => {
+                    for(let i=0; i<5; i++) {
+                        playTone(200 + Math.random()*1000, 'square', 0.05, i*0.08);
+                    }
+                }
+            };
+        })();
+
+        /* --- VISUAL EFFECTS --- */
+        const CanvasFx = (() => {
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+            let w, h;
+            const chars = '01ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+            const drops = [];
+            const fontSize = 14;
+
+            const resize = () => {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+                const columns = w / fontSize;
+                for(let i=0; i<columns; i++) drops[i] = 1;
+            };
+
+            const draw = () => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#fff'; // White text
+                ctx.font = fontSize + 'px monospace';
+
+                for(let i=0; i<drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    // Only draw randomly to save performance/aesthetic
+                    if(Math.random() > 0.97) {
+                        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    }
+                    if(drops[i] * fontSize > h && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+                requestAnimationFrame(draw);
+            };
+
+            window.addEventListener('resize', resize);
+            resize();
+            draw();
+        })();
+
+        /* --- APP LOGIC --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            const loader = document.getElementById('loader');
+            const app = document.getElementById('app-container');
+            const progressFill = document.getElementById('progress-fill');
+            const loaderText = document.getElementById('loader-text');
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            const resultsArea = document.getElementById('results-area');
+            const qualitySlider = document.getElementById('quality-slider');
+            const qualityVal = document.getElementById('quality-val');
+            const clearBtn = document.getElementById('clear-btn');
+            const bulkCheck = document.getElementById('bulk-download');
+
+            // --- BOOT SEQUENCE ---
+            let loadPercent = 0;
+            const bootMsg = ["LOADING KERNEL...", "MOUNTING VOLUMES...", "CONNECTING NEURAL NET...", "ESTABLISHING UPLINK...", "SYSTEM READY."];
+            
+            const bootInterval = setInterval(() => {
+                loadPercent += Math.random() * 5;
+                if(loadPercent > 100) loadPercent = 100;
+                progressFill.style.width = loadPercent + "%";
+                
+                // Random text updates
+                if(Math.random() > 0.7) {
+                    loaderText.innerText = bootMsg[Math.floor(Math.random() * bootMsg.length)];
+                }
+
+                if(loadPercent === 100) {
+                    clearInterval(bootInterval);
+                    setTimeout(() => {
+                        loader.classList.add('fade-out');
+                        app.style.opacity = '1';
+                        AudioSys.boot(); // Play boot sound
+                    }, 500);
+                    setTimeout(() => loader.style.display = 'none', 1000);
+                }
+            }, 30); // ~2 seconds total
+
+            // --- INTERACTION ---
+            // Init audio on first click anywhere
+            window.addEventListener('click', () => {
+                AudioSys.init();
+            }, { once: true });
+
+            document.querySelectorAll('button, a, input, .cyber-btn').forEach(el => {
+                el.addEventListener('mouseenter', () => AudioSys.hover());
+                el.addEventListener('click', () => AudioSys.click());
+            });
+
+            // Quality Slider
+            qualitySlider.addEventListener('input', (e) => {
+                qualityVal.innerText = Math.round(e.target.value * 100) + "%";
+            });
+
+            // --- FILE HANDLING ---
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('bg-white', 'bg-opacity-10');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('bg-white', 'bg-opacity-10');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('bg-white', 'bg-opacity-10');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+                fileInput.value = ''; // Reset
+            });
+
+            clearBtn.addEventListener('click', () => {
+                fileList.innerHTML = '';
+                resultsArea.classList.add('hidden');
+            });
+
+            function handleFiles(files) {
+                const pngs = Array.from(files).filter(f => f.type === 'image/png');
+                if(pngs.length === 0) {
+                    alert("PROTOCOL ERROR: ONLY PNG FILES ACCEPTED.");
+                    return;
+                }
+                
+                resultsArea.classList.remove('hidden');
+                AudioSys.process();
+
+                pngs.forEach(processImage);
+            }
+
+            function processImage(file) {
+                const id = Math.random().toString(36).substr(2, 9);
+                
+                // Create UI Entry
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between bg-gray-900 border border-gray-700 p-3 hover:border-white transition-colors";
+                row.id = `item-${id}`;
+                row.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-2 h-2 bg-yellow-500 animate-pulse" id="status-dot-${id}"></div>
+                        <span class="text-sm truncate font-mono w-40 md:w-64">${file.name}</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs text-gray-500 hidden md:inline" id="size-${id}">PROCESSING...</span>
+                        <a id="dl-${id}" class="cyber-btn px-4 py-1 text-xs opacity-50 cursor-not-allowed">WAIT</a>
+                    </div>
+                `;
+                fileList.prepend(row);
+
+                // Process
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Fill white background for transparency
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+
+                        const quality = parseFloat(qualitySlider.value);
+                        
+                        canvas.toBlob((blob) => {
+                            // Update UI
+                            const url = URL.createObjectURL(blob);
+                            const dot = document.getElementById(`status-dot-${id}`);
+                            const btn = document.getElementById(`dl-${id}`);
+                            const sizeTxt = document.getElementById(`size-${id}`);
+                            
+                            // Size Calc
+                            const origSize = (file.size / 1024).toFixed(1);
+                            const newSize = (blob.size / 1024).toFixed(1);
+                            const saving = (((file.size - blob.size) / file.size) * 100).toFixed(1);
+
+                            dot.classList.remove('bg-yellow-500', 'animate-pulse');
+                            dot.classList.add('bg-green-500'); // Success green
+                            
+                            sizeTxt.innerHTML = `<span class="text-gray-400">${origSize}KB</span> -> <span class="text-white">${newSize}KB</span> (-${saving}%)`;
+                            
+                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            btn.innerText = "DOWNLOAD";
+                            btn.href = url;
+                            btn.download = file.name.replace('.png', '.jpg');
+                            
+                            AudioSys.success();
+
+                            // Auto download if checked
+                            if(bulkCheck.checked) {
+                                setTimeout(() => btn.click(), 500);
+                            }
+
+                        }, 'image/jpeg', quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
