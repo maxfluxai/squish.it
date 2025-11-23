@@ -198,34 +198,6 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* --- LOADING SCREEN --- */
-        #loader {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: #000;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .loader-bar {
-            width: 300px;
-            height: 20px;
-            border: 2px solid white;
-            padding: 2px;
-            margin-top: 20px;
-        }
-        
-        .loader-progress {
-            height: 100%;
-            background: white;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
         /* --- Scrollbar --- */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #333; }
@@ -242,20 +214,11 @@
     <div class="scanlines"></div>
     <div class="crt-overlay"></div>
 
-    <!-- LOADING SCREEN -->
-    <div id="loader">
-        <div class="text-4xl cyber-font mb-4 tracking-widest text-white">SYSTEM BOOT</div>
-        <div class="font-mono text-gray-400 text-sm mb-2" id="loader-text">INITIALIZING...</div>
-        <div class="loader-bar">
-            <div class="loader-progress" id="progress-fill"></div>
-        </div>
-    </div>
-
     <!-- CANVAS BACKGROUND -->
     <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-30"></canvas>
 
     <!-- MAIN CONTENT -->
-    <div id="app-container" class="flex-grow flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full relative z-10 opacity-0 transition-opacity duration-1000">
+    <div id="app-container" class="flex-grow flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full relative z-10">
         
         <!-- HEADER -->
         <header class="flex justify-between items-end border-b-2 border-white pb-4 mb-8">
@@ -488,10 +451,6 @@
 
         /* --- APP LOGIC --- */
         document.addEventListener('DOMContentLoaded', () => {
-            const loader = document.getElementById('loader');
-            const app = document.getElementById('app-container');
-            const progressFill = document.getElementById('progress-fill');
-            const loaderText = document.getElementById('loader-text');
             const dropZone = document.getElementById('drop-zone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
@@ -501,35 +460,11 @@
             const clearBtn = document.getElementById('clear-btn');
             const bulkCheck = document.getElementById('bulk-download');
 
-            // --- BOOT SEQUENCE ---
-            let loadPercent = 0;
-            const bootMsg = ["LOADING KERNEL...", "MOUNTING VOLUMES...", "CONNECTING NEURAL NET...", "ESTABLISHING UPLINK...", "SYSTEM READY."];
-            
-            const bootInterval = setInterval(() => {
-                loadPercent += Math.random() * 5;
-                if(loadPercent > 100) loadPercent = 100;
-                progressFill.style.width = loadPercent + "%";
-                
-                // Random text updates
-                if(Math.random() > 0.7) {
-                    loaderText.innerText = bootMsg[Math.floor(Math.random() * bootMsg.length)];
-                }
-
-                if(loadPercent === 100) {
-                    clearInterval(bootInterval);
-                    setTimeout(() => {
-                        loader.classList.add('fade-out');
-                        app.style.opacity = '1';
-                        AudioSys.boot(); // Play boot sound
-                    }, 500);
-                    setTimeout(() => loader.style.display = 'none', 1000);
-                }
-            }, 30); // ~2 seconds total
-
             // --- INTERACTION ---
             // Init audio on first click anywhere
             window.addEventListener('click', () => {
                 AudioSys.init();
+                AudioSys.boot();
             }, { once: true });
 
             document.querySelectorAll('button, a, input, .cyber-btn').forEach(el => {
