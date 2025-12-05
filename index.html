@@ -210,34 +210,26 @@
 </head>
 <body class="flicker">
 
-    <!-- OVERLAYS -->
     <div class="scanlines"></div>
     <div class="crt-overlay"></div>
 
-    <!-- CANVAS BACKGROUND -->
     <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-30"></canvas>
 
-    <!-- MAIN CONTENT -->
     <div id="app-container" class="flex-grow flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full relative z-10">
         
-        <!-- HEADER -->
         <header class="flex justify-between items-end border-b-2 border-white pb-4 mb-8">
             <div>
                 <h1 class="text-6xl md:text-8xl font-bold leading-none tracking-tighter glitch" data-text="SQUISH.IT">SQUISH.IT</h1>
                 <p class="text-lg md:text-xl tracking-[0.5em] mt-2 uppercase">PNG // JPG CONVERTER</p>
             </div>
             <div class="text-right hidden md:block">
-                <div class="text-xs text-gray-400 mb-1">SYS.VER.2.0.77</div>
-                <div class="text-2xl cyber-font">圧縮する</div> <!-- "Compress" in Japanese -->
-            </div>
+                <div class="text-xs text-gray-400 mb-1">SYS.VER.2.0.78</div>
+                <div class="text-2xl cyber-font">圧縮する</div> </div>
         </header>
 
-        <!-- MAIN INTERFACE GRID -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-grow">
             
-            <!-- LEFT: CONTROLS & INFO -->
             <section class="lg:col-span-1 flex flex-col gap-6">
-                <!-- Status Box -->
                 <div class="cyber-border p-6">
                     <h3 class="text-2xl mb-4 border-b border-gray-600 pb-2 flex justify-between">
                         <span>STATUS</span>
@@ -254,7 +246,6 @@
                     </div>
                 </div>
 
-                <!-- Settings -->
                 <div class="cyber-border p-6">
                     <h3 class="text-2xl mb-4 border-b border-gray-600 pb-2">PARAMETERS</h3>
                     <div class="space-y-4">
@@ -275,10 +266,8 @@
                 </div>
             </section>
 
-            <!-- CENTER & RIGHT: DROPZONE & RESULTS -->
             <section class="lg:col-span-2 flex flex-col gap-6">
                 
-                <!-- Drop Zone -->
                 <div id="drop-zone" class="cyber-border cyber-input-zone h-64 flex flex-col justify-center items-center text-center p-8 transition-colors cursor-pointer group hover:bg-white/5">
                     <div class="mb-4 transform group-hover:scale-110 transition-transform duration-300">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
@@ -288,26 +277,23 @@
                         </svg>
                     </div>
                     <h2 class="text-3xl font-bold mb-2 group-hover:text-white text-gray-200">DROP DATA HERE</h2>
-                    <p class="text-gray-400 text-sm tracking-widest uppercase">Or Click to Upload (PNG Only)</p>
+                    <p class="text-gray-400 text-sm tracking-widest uppercase">Or Click to Upload (PNG // JPG // JPEG)</p>
                     <p class="text-xs text-gray-600 mt-4 font-mono">SUPPORT: SINGLE // BATCH</p>
-                    <input type="file" id="file-input" class="hidden" multiple accept="image/png">
+                    <input type="file" id="file-input" class="hidden" multiple accept="image/png, image/jpeg">
                 </div>
 
-                <!-- Results Area -->
                 <div id="results-area" class="cyber-border flex-grow p-4 min-h-[200px] max-h-[400px] overflow-y-auto hidden">
                     <div class="flex justify-between items-center mb-4 sticky top-0 bg-black/90 p-2 border-b border-gray-700 z-10">
                         <h3 class="text-xl">OUTPUT LOG</h3>
                         <button id="clear-btn" class="text-xs hover:text-red-500 hover:underline">[CLEAR LOG]</button>
                     </div>
                     <div id="file-list" class="space-y-3">
-                        <!-- Items injected via JS -->
-                    </div>
+                        </div>
                 </div>
 
             </section>
         </main>
 
-        <!-- FOOTER / SOCIALS -->
         <footer class="mt-12 pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-xs text-gray-500 font-mono">
                 <span class="animate-pulse">_</span> PROJECT SQUISH.IT &copy; 2077
@@ -506,16 +492,18 @@
             });
 
             function handleFiles(files) {
-                const pngs = Array.from(files).filter(f => f.type === 'image/png');
-                if(pngs.length === 0) {
-                    alert("PROTOCOL ERROR: ONLY PNG FILES ACCEPTED.");
+                // MODIFIED: Accept both PNG and JPEG types
+                const validFiles = Array.from(files).filter(f => f.type === 'image/png' || f.type === 'image/jpeg');
+                
+                if(validFiles.length === 0) {
+                    alert("PROTOCOL ERROR: ONLY PNG OR JPG/JPEG FILES ACCEPTED.");
                     return;
                 }
                 
                 resultsArea.classList.remove('hidden');
                 AudioSys.process();
 
-                pngs.forEach(processImage);
+                validFiles.forEach(processImage);
             }
 
             function processImage(file) {
@@ -547,7 +535,7 @@
                         canvas.height = img.height;
                         const ctx = canvas.getContext('2d');
                         
-                        // Fill white background for transparency
+                        // Fill white background (handles transparent PNGs and ignores JPEGs)
                         ctx.fillStyle = '#fff';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(img, 0, 0);
@@ -569,12 +557,17 @@
                             dot.classList.remove('bg-yellow-500', 'animate-pulse');
                             dot.classList.add('bg-green-500'); // Success green
                             
-                            sizeTxt.innerHTML = `<span class="text-gray-400">${origSize}KB</span> -> <span class="text-white">${newSize}KB</span> (-${saving}%)`;
+                            // Color code the savings (red if file got bigger, which can happen with already compressed JPEGs)
+                            const savingColor = saving < 0 ? 'text-red-400' : 'text-white';
+                            sizeTxt.innerHTML = `<span class="text-gray-400">${origSize}KB</span> -> <span class="${savingColor}">${newSize}KB</span> (${saving}%)`;
                             
                             btn.classList.remove('opacity-50', 'cursor-not-allowed');
                             btn.innerText = "DOWNLOAD";
                             btn.href = url;
-                            btn.download = file.name.replace('.png', '.jpg');
+                            
+                            // MODIFIED: Regex to replace extension with .jpg
+                            const newName = file.name.replace(/\.(png|jpeg|jpg)$/i, '') + '.jpg';
+                            btn.download = newName;
                             
                             AudioSys.success();
 
